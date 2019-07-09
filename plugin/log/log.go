@@ -40,7 +40,10 @@ func (l Logger) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) 
 		// and we shouldn't have an empty rule.Class.
 		_, ok := rule.Class[response.All]
 		_, ok1 := rule.Class[class]
-		if ok || ok1 {
+		// Check if the slow log is enabled.
+		ok2 := ok || ok1 ||
+			(rule.MinDuration > 0 && time.Since(rrw.Start) >= rule.MinDuration)
+		if ok || ok1 || ok2 {
 			logstr := l.repl.Replace(ctx, state, rrw, rule.Format)
 			clog.Infof(logstr)
 		}
@@ -56,9 +59,10 @@ func (l Logger) Name() string { return "log" }
 
 // Rule configures the logging plugin.
 type Rule struct {
-	NameScope string
-	Class     map[response.Class]struct{}
-	Format    string
+	NameScope   string
+	Class       map[response.Class]struct{}
+	Format      string
+	MinDuration time.Duration
 }
 
 const (

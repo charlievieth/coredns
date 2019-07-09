@@ -3,6 +3,7 @@ package log
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/coredns/coredns/plugin/pkg/response"
 
@@ -120,6 +121,23 @@ func TestLogParse(t *testing.T) {
 			NameScope: ".",
 			Format:    CommonLogFormat,
 			Class:     map[response.Class]struct{}{response.Denial: {}, response.Error: {}},
+		}}},
+		{`log {
+			class error
+			slow 10ms
+		}`, false, []Rule{{
+			NameScope:   ".",
+			Format:      CommonLogFormat,
+			Class:       map[response.Class]struct{}{response.Error: {}},
+			MinDuration: time.Millisecond * 10,
+		}}},
+		{`log {
+			class error
+		}`, false, []Rule{{
+			NameScope:   ".",
+			Format:      CommonLogFormat,
+			Class:       map[response.Class]struct{}{response.Error: {}},
+			MinDuration: DefaultSlowDuration,
 		}}},
 		{`log {
 			class abracadabra

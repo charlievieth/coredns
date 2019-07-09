@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/coredns/coredns/plugin/pkg/dnstest"
 	clog "github.com/coredns/coredns/plugin/pkg/log"
@@ -108,6 +109,50 @@ func TestLoggedClassError(t *testing.T) {
 	logged := f.String()
 	if !strings.Contains(logged, "SERVFAIL") {
 		t.Errorf("Expected it to be logged. Logged string: %s", logged)
+	}
+}
+
+func TestLoggedClassSlow(t *testing.T) {
+	rules := []Rule{
+		{
+			NameScope:   ".",
+			Format:      DefaultLogFormat,
+			MinDuration: 0, // ignored
+		},
+		{
+			NameScope:   ".",
+			Format:      DefaultLogFormat,
+			MinDuration: time.Nanosecond, // impossibly small
+		},
+	}
+	for _, rule := range rules {
+		var f bytes.Buffer
+		log.SetOutput(&f)
+
+		logger := Logger{
+			Rules: []Rule{rule},
+			Next:  test.ErrorHandler(),
+			repl:  replacer.New(),
+		}
+
+		ctx := context.TODO()
+		r := new(dns.Msg)
+		r.SetQuestion("example.org.", dns.TypeA)
+
+		rec := dnstest.NewRecorder(&test.ResponseWriter{})
+
+		logger.ServeDNS(ctx, rec, r)
+
+		logged := f.String()
+		if rule.MinDuration > 0 {
+			if len(logged) == 0 {
+				t.Error("Expected it to be logged, but got nothing")
+			}
+		} else {
+			if len(logged) != 0 {
+				t.Errorf("Expected it not to be logged, but got string: %s", logged)
+			}
+		}
 	}
 }
 

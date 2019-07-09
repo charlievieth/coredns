@@ -2,6 +2,7 @@ package log
 
 import (
 	"strings"
+	"time"
 
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
@@ -11,6 +12,8 @@ import (
 	"github.com/mholt/caddy"
 	"github.com/miekg/dns"
 )
+
+const DefaultSlowDuration = time.Second * 3
 
 func init() {
 	caddy.RegisterPlugin("log", caddy.Plugin{
@@ -81,6 +84,7 @@ func logParse(c *caddy.Controller) ([]Rule, error) {
 
 		// Class refinements in an extra block.
 		classes := make(map[response.Class]struct{})
+		var minDuration time.Duration
 		for c.NextBlock() {
 			switch c.Val() {
 			// class followed by combinations of all, denial, error and success.
@@ -96,6 +100,20 @@ func logParse(c *caddy.Controller) ([]Rule, error) {
 					}
 					classes[cls] = struct{}{}
 				}
+			case "slow":
+				slowArgs := c.RemainingArgs()
+				switch len(slowArgs) {
+				case 0:
+					minDuration = DefaultSlowDuration
+				case 1:
+					d, err := time.ParseDuration(slowArgs[0])
+					if err != nil {
+						return nil, c.Errf("parsing slow duration: %s", err)
+					}
+					minDuration = d
+				default:
+					return nil, c.ArgErr()
+				}
 			default:
 				return nil, c.ArgErr()
 			}
@@ -106,6 +124,7 @@ func logParse(c *caddy.Controller) ([]Rule, error) {
 
 		for i := len(rules) - 1; i >= length; i-- {
 			rules[i].Class = classes
+			rules[i].MinDuration = minDuration
 		}
 	}
 
