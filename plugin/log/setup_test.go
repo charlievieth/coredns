@@ -123,21 +123,21 @@ func TestLogParse(t *testing.T) {
 			Class:     map[response.Class]struct{}{response.Denial: {}, response.Error: {}},
 		}}},
 		{`log {
-			class error
-			slow 10ms
+			slow
 		}`, false, []Rule{{
 			NameScope:   ".",
 			Format:      CommonLogFormat,
-			Class:       map[response.Class]struct{}{response.Error: {}},
-			MinDuration: time.Millisecond * 10,
+			Class:       map[response.Class]struct{}{response.All: {}},
+			MinDuration: DefaultSlowDuration,
 		}}},
 		{`log {
-			class error
+			class denial error
+			slow 1h
 		}`, false, []Rule{{
 			NameScope:   ".",
 			Format:      CommonLogFormat,
-			Class:       map[response.Class]struct{}{response.Error: {}},
-			MinDuration: DefaultSlowDuration,
+			Class:       map[response.Class]struct{}{response.Denial: {}, response.Error: {}},
+			MinDuration: time.Hour,
 		}}},
 		{`log {
 			class abracadabra
@@ -147,6 +147,12 @@ func TestLogParse(t *testing.T) {
 		}`, true, []Rule{}},
 		{`log {
 			unknown
+		}`, true, []Rule{}},
+		{`log {
+			slow 10X
+		}`, true, []Rule{}},
+		{`log {
+			slow 10s 1
 		}`, true, []Rule{}},
 	}
 	for i, test := range tests {
@@ -173,6 +179,11 @@ func TestLogParse(t *testing.T) {
 			if actualLogRule.Format != test.expectedLogRules[j].Format {
 				t.Errorf("Test %d expected %dth LogRule Format for '%s' to be  %s  , but got %s",
 					i, j, test.inputLogRules, test.expectedLogRules[j].Format, actualLogRule.Format)
+			}
+
+			if actualLogRule.MinDuration != test.expectedLogRules[j].MinDuration {
+				t.Errorf("Test %d expected %dth LogRule MinDuration for '%s' to be  %s  , but got %s",
+					i, j, test.inputLogRules, test.expectedLogRules[j].MinDuration, actualLogRule.MinDuration)
 			}
 
 			if !reflect.DeepEqual(actualLogRule.Class, test.expectedLogRules[j].Class) {
