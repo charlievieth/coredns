@@ -26,24 +26,27 @@ type Logger struct {
 // ServeDNS implements the plugin.Handler interface.
 func (l Logger) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
 	state := request.Request{W: w, Req: r}
+	name := state.Name()
 	for _, rule := range l.Rules {
-		if !plugin.Name(rule.NameScope).Matches(state.Name()) {
+		if !plugin.Name(rule.NameScope).Matches(name) {
 			continue
 		}
 
 		rrw := dnstest.NewRecorder(w)
 		rc, err := plugin.NextOrFailure(l.Name(), l.Next, ctx, rrw, r)
 
-		tpe, _ := response.Typify(rrw.Msg, time.Now().UTC())
-		class := response.Classify(tpe)
 		// If we don't set up a class in config, the default "all" will be added
 		// and we shouldn't have an empty rule.Class.
 		_, ok := rule.Class[response.All]
-		_, ok1 := rule.Class[class]
-		// Check if the slow log is enabled.
-		ok2 := ok || ok1 ||
-			(rule.MinDuration > 0 && time.Since(rrw.Start) >= rule.MinDuration)
-		if ok || ok1 || ok2 {
+		if !ok {
+			ok = rule.MinDuration > 0 && time.Now().Sub(rrw.Start) >= rule.MinDuration
+		}
+		if !ok {
+			tpe, _ := response.Typify(rrw.Msg, time.Now().UTC())
+			class := response.Classify(tpe)
+			_, ok = rule.Class[class]
+		}
+		if ok {
 			logstr := l.repl.Replace(ctx, state, rrw, rule.Format)
 			clog.Infof(logstr)
 		}
