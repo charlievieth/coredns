@@ -35,19 +35,24 @@ func (l Logger) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) 
 		rrw := dnstest.NewRecorder(w)
 		rc, err := plugin.NextOrFailure(l.Name(), l.Next, ctx, rrw, r)
 
+		slow := rule.MinDuration > 0 && time.Now().Sub(rrw.Start) >= rule.MinDuration
+
 		// If we don't set up a class in config, the default "all" will be added
 		// and we shouldn't have an empty rule.Class.
 		_, ok := rule.Class[response.All]
-		if !ok {
-			ok = rule.MinDuration > 0 && time.Now().Sub(rrw.Start) >= rule.MinDuration
-		}
+		ok = ok || slow
 		if !ok {
 			tpe, _ := response.Typify(rrw.Msg, time.Now().UTC())
 			class := response.Classify(tpe)
 			_, ok = rule.Class[class]
 		}
 		if ok {
-			logstr := l.repl.Replace(ctx, state, rrw, rule.Format)
+			// WARN (CEV): testing only
+			format := rule.Format
+			if slow {
+				format = "[SLOW] " + format
+			}
+			logstr := l.repl.Replace(ctx, state, rrw, format)
 			clog.Infof(logstr)
 		}
 
