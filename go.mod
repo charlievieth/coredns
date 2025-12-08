@@ -29,7 +29,6 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/openzipkin-contrib/zipkin-go-opentracing v0.5.0
 	github.com/openzipkin/zipkin-go v0.4.3
-	github.com/oschwald/geoip2-golang v1.13.0
 	github.com/prometheus/client_golang v1.23.0
 	github.com/prometheus/client_model v0.6.2
 	github.com/prometheus/common v0.67.1
@@ -38,7 +37,7 @@ require (
 	go.etcd.io/etcd/client/v3 v3.6.5
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/crypto v0.43.0
-	golang.org/x/sys v0.37.0
+	golang.org/x/sys v0.38.0
 	google.golang.org/api v0.253.0
 	google.golang.org/grpc v1.76.0
 	google.golang.org/protobuf v1.36.10
@@ -48,6 +47,8 @@ require (
 	k8s.io/klog/v2 v2.130.1
 	sigs.k8s.io/mcs-api v0.3.0
 )
+
+require github.com/oschwald/geoip2-golang/v2 v2.0.1
 
 require (
 	cloud.google.com/go/auth v0.17.0 // indirect
@@ -136,7 +137,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.22.1 // indirect
 	github.com/onsi/gomega v1.36.2 // indirect
 	github.com/opentracing-contrib/go-observer v0.0.0-20170622124052-a52f23424492 // indirect
-	github.com/oschwald/maxminddb-golang v1.13.0 // indirect
+	github.com/oschwald/maxminddb-golang/v2 v2.1.1 // indirect
 	github.com/outcaste-io/ristretto v0.2.3 // indirect
 	github.com/philhofer/fwd v1.1.3-0.20240916144458-20a13a1f6b7c // indirect
 	github.com/pkg/errors v0.9.1 // indirect
