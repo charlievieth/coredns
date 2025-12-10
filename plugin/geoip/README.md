@@ -115,3 +115,19 @@ A limited set of fields will be exported as labels, all values are stored using 
 | NA    | North America  |
 | OC    | Oceania        |
 | SA    | South America  |
+
+## geoip2-golang v2 Upgrade
+
+This plugin uses [geoip2-golang v2](https://github.com/oschwald/geoip2-golang), which provides significant performance improvements and API modernization over v1.
+
+### Performance Improvements
+
+The v2 release delivers substantial performance gains through several optimizations. Localized name fields are now stored in a structured `Names` type instead of `map[string]string`, eliminating map allocation overhead and reducing memory usage by approximately 34% with 56% fewer allocations. IP address handling uses Go's modern `netip.Addr` type instead of `net.IP`, which avoids heap allocations for most lookups and removes ambiguity around IPv4-in-IPv6 addresses.
+
+### Breaking Changes from v1
+
+The v2 upgrade includes several breaking changes in the underlying library. While these changes are internal to the plugin implementation and do not affect the Corefile configuration or metadata labels, they are documented here for reference.
+
+The lookup methods now require `netip.Addr` instead of `net.IP`. This provides better performance and aligns with modern Go networking practices. The `IsoCode` field has been renamed to `ISOCode` across all structs to follow proper capitalization for the ISO acronym. Localized names are now accessed via struct fields (e.g., `Names.English`) rather than map lookups (e.g., `Names["en"]`). Location coordinates (`Latitude` and `Longitude`) are now pointer types (`*float64`) to properly distinguish between missing coordinates and the valid location (0, 0).
+
+These internal changes do not affect how you configure or use the geoip plugin - the Corefile syntax and metadata labels remain unchanged.

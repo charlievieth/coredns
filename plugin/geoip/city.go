@@ -6,27 +6,27 @@ import (
 
 	"github.com/coredns/coredns/plugin/metadata"
 
-	"github.com/oschwald/geoip2-golang"
+	"github.com/oschwald/geoip2-golang/v2"
 )
-
-const defaultLang = "en"
 
 func (g GeoIP) setCityMetadata(ctx context.Context, data *geoip2.City) {
 	// Set labels for city, country and continent names.
-	cityName := data.City.Names[defaultLang]
+	// In v2, Names is a struct with language fields instead of a map.
+	cityName := data.City.Names.English
 	metadata.SetValueFunc(ctx, pluginName+"/city/name", func() string {
 		return cityName
 	})
-	countryName := data.Country.Names[defaultLang]
+	countryName := data.Country.Names.English
 	metadata.SetValueFunc(ctx, pluginName+"/country/name", func() string {
 		return countryName
 	})
-	continentName := data.Continent.Names[defaultLang]
+	continentName := data.Continent.Names.English
 	metadata.SetValueFunc(ctx, pluginName+"/continent/name", func() string {
 		return continentName
 	})
 
-	countryCode := data.Country.IsoCode
+	// In v2, IsoCode is renamed to ISOCode.
+	countryCode := data.Country.ISOCode
 	metadata.SetValueFunc(ctx, pluginName+"/country/code", func() string {
 		return countryCode
 	})
@@ -39,11 +39,19 @@ func (g GeoIP) setCityMetadata(ctx context.Context, data *geoip2.City) {
 		return continentCode
 	})
 
-	latitude := strconv.FormatFloat(data.Location.Latitude, 'f', -1, 64)
+	// In v2, Latitude and Longitude are pointers to properly distinguish
+	// between missing coordinates and the valid location (0, 0).
+	var latitude string
+	if data.Location.Latitude != nil {
+		latitude = strconv.FormatFloat(*data.Location.Latitude, 'f', -1, 64)
+	}
 	metadata.SetValueFunc(ctx, pluginName+"/latitude", func() string {
 		return latitude
 	})
-	longitude := strconv.FormatFloat(data.Location.Longitude, 'f', -1, 64)
+	var longitude string
+	if data.Location.Longitude != nil {
+		longitude = strconv.FormatFloat(*data.Location.Longitude, 'f', -1, 64)
+	}
 	metadata.SetValueFunc(ctx, pluginName+"/longitude", func() string {
 		return longitude
 	})
