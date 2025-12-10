@@ -118,24 +118,4 @@ A limited set of fields will be exported as labels, all values are stored using 
 
 ## geoip2-golang v2 Upgrade
 
-This plugin uses [geoip2-golang v2](https://github.com/oschwald/geoip2-golang), which provides significant performance improvements over v1.
-
-### Performance Improvements
-
-The v2 library delivers substantial performance gains through internal optimizations:
-
-- 34% reduction in memory usage due to elimination of map allocation overhead for Names fields
-- 56% reduction in allocations through use of structured Names types instead of `map[string]string`
-- Improved lookup performance from using Go's `netip.Addr` type instead of `net.IP`
-
-### Breaking Changes
-
-The v2 upgrade includes the following breaking changes that may affect custom plugins or code that directly uses the geoip2-golang library:
-
-- **IP address type**: Lookup methods now require `netip.Addr` instead of `net.IP`. Use `netip.ParseAddr()` instead of `net.ParseIP()`.
-- **Names access**: Names fields changed from `map[string]string` to structured types. Access names via struct fields (e.g., `Names.English`) instead of map keys (e.g., `Names["en"]`).
-- **Field naming**: `IsoCode` fields renamed to `ISOCode` to follow proper capitalization for the ISO acronym.
-- **Location coordinates**: `Location.Latitude` and `Location.Longitude` changed from `float64` to `*float64` to distinguish between missing coordinates and the valid location (0, 0).
-- **Go version**: Go 1.24 or greater is now required.
-
-These changes are internal to the plugin and do not affect the metadata labels or Corefile configuration. Users of the geoip plugin do not need to make any changes to their CoreDNS configuration.
+This plugin uses [geoip2-golang v2](https://github.com/oschwald/geoip2-golang), which provides ~34% memory reduction and ~56% fewer allocations. These changes are internal and do not affect the Corefile configuration or metadata labels.
